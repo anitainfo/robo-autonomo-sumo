@@ -48,11 +48,11 @@ A lógica embarcada permite que o robô **identifique o oponente, evite sair da 
 ## 🚀 Como Executar
 
 O projeto pode ser compilado e carregado em microcontroladores **ESP32**.  
-As instruções abaixo detalham os dois métodos de execução:
+As instruções abaixo detalham o método de execução:
 
 ---
 
-### 🧰 Opção 1 — Usando PlatformIO (recomendado)
+### 🧰 Usando PlatformIO
 
 1. **Instale o PlatformIO**  
    - Via [VS Code](https://platformio.org/install/ide?install=vscode) (extensão PlatformIO IDE)
