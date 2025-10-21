@@ -47,7 +47,7 @@ A lógica embarcada permite que o robô **identifique o oponente, evite sair da 
 
 ## 🚀 Como Executar
 
-O projeto pode ser compilado e carregado em microcontroladores **ESP32** ou **Arduino UNO/Nano**, conforme o hardware disponível.  
+O projeto pode ser compilado e carregado em microcontroladores **ESP32**.  
 As instruções abaixo detalham os dois métodos de execução:
 
 ---
