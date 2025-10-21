@@ -1,7 +1,7 @@
 # 🤖 Robô Autônomo de Sumô
 
 Projeto de robô autônomo desenvolvido durante minha participação na **Equipe Phoenix – Unicamp**.  
-Esta é uma **versão pessoal** do projeto, mantida para fins de portfólio e aprimoramento técnico.
+Esta é uma **versão pessoal** do projeto, mantida para fins de portfólio e aprimoramento técnico.  
 Grande parte da base de código já havia sido desenvolvida em projetos anteriores da equipe, voltados a outros robôs autônomos.  
 Nesta versão, o código foi adaptado, reorganizado e aprimorado para atender às necessidades específicas do robô treinado por mim para a competição.
 
