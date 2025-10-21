@@ -1,324 +1,185 @@
 #include "state.hpp"
-#include <stdint.h>
-#include "motors.hpp"
-#include "sensors.hpp"
 #include "infrared.hpp"
+#include "motors.hpp"
+#include "presence_sensor.hpp"
 #include "line_sensor.hpp"
-/*
-#include <ESP32Servo.h>
+#include "initial_routine.hpp"
+#include <stdint.h>
 
-Servo servo_motor;  // create servo object to control a servo
-// 16 servo objects can be created on the ESP32
+static States_t current_state = INITIAL_ROUTINE;
 
-// Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33 
-// Possible PWM GPIO pins on the ESP32-S2: 0(used by on-board button),1-17,18(used by on-board LED),19-21,26,33-42
-// Possible PWM GPIO pins on the ESP32-S3: 0(used by on-board button),1-21,35-45,47,48(used by on-board LED)
-// Possible PWM GPIO pins on the ESP32-C3: 0(used by on-board button),1-7,8(used by on-board LED),9-10,18-21
-#if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
-int servoPin = 4;
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-int servoPin = 4;
-#else
-int servoPin = 4;
-#endif
-*/
+int frente_esq = 1900;
+int frente_dir = 1900;
+int centro = 1450;
+int lateral_esq = 1900;
+int lateral_dir = 1800;
+uint16_t last_left_sensor = 0;
+uint16_t last_left_center_sensor = 0;
+uint16_t last_right_center_sensor = 0;
+uint16_t last_right_sensor = 0;
 
-static KuronekoStrategyState current_state;
-
-static KuronekoStartingMove starting_routine = NONE;
-
-//bool lado_bandeira = false; // começa fechando a bandeira
-
-//bool girar_bandeira = false; 
-
-void set_state(KuronekoStrategyState new_state) {
+void set_state(States_t new_state){
     current_state = new_state;
-}
+}                                                                                     
 
-KuronekoStrategyState get_state() {
+States_t save_state(){
     return current_state;
 }
 
-KuronekoStartingMove get_starting_routine(){
-    return starting_routine;
-}
+void decide_state(){
+    if(save_state() == FAILSAFE) return;
 
-void set_starting_routine(KuronekoStartingMove move){
-    starting_routine = move;
-}
+    uint16_t l1 = get_presence_sensor(LEFT_SENSOR); 
+    uint16_t l2 = get_presence_sensor(LEFT_SENSOR); 
+    uint16_t l3 = get_presence_sensor(LEFT_SENSOR); 
+    uint16_t left_sensor = (l1+l2+l3)/3;   
+    
+    uint16_t lc1 = get_presence_sensor(LEFT_CENTER_SENSOR); 
+    uint16_t lc2 = get_presence_sensor(LEFT_CENTER_SENSOR); 
+    uint16_t lc3 = get_presence_sensor(LEFT_CENTER_SENSOR); 
+    uint16_t left_center_sensor = (lc1+lc2+lc3)/3;
 
-/*
-void set_bandeira_open(bool open){
-    girar_bandeira = open;
-}
+    uint16_t rc1 = get_presence_sensor(RIGHT_CENTER_SENSOR); 
+    uint16_t rc2 = get_presence_sensor(RIGHT_CENTER_SENSOR); 
+    uint16_t rc3 = get_presence_sensor(RIGHT_CENTER_SENSOR); 
+    uint16_t right_center_sensor = (rc1+rc2+rc3)/3;
 
-void set_bandeira_side(bool side){
-    lado_bandeira = side;
-}
-*/
+    uint16_t r1 = get_presence_sensor(RIGHT_SENSOR); 
+    uint16_t r2 = get_presence_sensor(RIGHT_SENSOR); 
+    uint16_t r3 = get_presence_sensor(RIGHT_SENSOR); 
+    uint16_t right_sensor = (r1+r2+r3)/3;
 
-void run_starting_routine() { // com delay
-    check_for_failsafe_signal();
     /*
-    if(girar_bandeira){ // girar bandeira
+    uint16_t left_line_sensor = analogRead(LEFT_LINE_SENSOR_PIN);          //sensor de linha
+    uint16_t right_line_sensor = analogRead(RIGHT_LINE_SENSOR_PIN);
 
-        // Allow allocation of all timers
-        ESP32PWM::allocateTimer(0);
-        ESP32PWM::allocateTimer(1);
-        ESP32PWM::allocateTimer(2);
-        ESP32PWM::allocateTimer(3);
-        servo_motor.setPeriodHertz(50);    // standard 50 hz servo
-        servo_motor.attach(servoPin, 500, 2400); // attaches the servo on pin 18 to the servo object
-        // using default min/max of 1000us and 2000us
-        // different servos may require different min/max settings
-        // for an accurate 0 to 180 sweep
-
-        Serial.println("VOU MEXER SERVOOOOOOOOOOOOOOOOOOOOO\n");
-        if(lado_bandeira){ // abre p/ direita
-            servo_motor.write(180); 
-            delay(500);
-            Serial.println("mexendo servo\n"); 
-        } else{ // fecha bandeira
-            servo_motor.write(90); 
-            delay(500);
-            Serial.println("mexendo servo\n");
-        }
-        girar_bandeira = false;
+     if((left_line_sensor<LINE_VALUE) && (right_line_sensor<LINE_VALUE)){
+        set_state(BACK_LINE);
+        set_is_running(false);
+        return;
     }
+    else if(left_line_sensor<LINE_VALUE){
+        set_state(LEFT_LINE);
+        set_is_running(false);
+        return;
+    }
+    else if(right_line_sensor<LINE_VALUE){
+        set_state(RIGHT_LINE);
+        set_is_running(false);
+        return;
+    }
+    
+    Serial.print("esq: ");
+    Serial.print(left_center_sensor);
+    Serial.print("    |    dir: ");
+    Serial.println(right_center_sensor);
     */
-    switch (starting_routine) {
-        case CHARGE:
-            motor_control(RIGHT, MAX_PWR);
-            motor_control(LEFT, MAX_PWR);
-            delay(280);
-            motor_control(RIGHT, -MAX_PWR);
-            motor_control(LEFT, -MAX_PWR);
-            delay(15);
-            break;
-        case CHARGE_LEFT:                           //comentarios errados
-            motor_control(RIGHT,  MAX_PWR);         // curva esquerda
-            motor_control(LEFT,   MAX_PWR);
-            delay(200);
-            motor_control(RIGHT,  -0.2 * MAX_PWR);  // para
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(20);
-            motor_control(RIGHT, -MAX_PWR);         // gira direita
-            motor_control(LEFT,   MAX_PWR);
-            delay(110);
-            motor_control(RIGHT,  -0.2 * MAX_PWR);  // para
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(30);
-            motor_control(RIGHT,  MAX_PWR);         // frente
-            motor_control(LEFT,  MAX_PWR);
-            delay(160);
-            motor_control(RIGHT,  -0.2 * MAX_PWR);  // para
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(30);
-            motor_control(RIGHT, -MAX_PWR);         // gira direita
-            motor_control(LEFT,   MAX_PWR);
-            delay(150);
-            motor_control(RIGHT,  MAX_PWR);         // frente
-            motor_control(LEFT,  MAX_PWR);
-            delay(20);
-            break;
-            break;
-        case CHARGE_RIGHT:
-            motor_control(RIGHT,  MAX_PWR);         // curva esquerda
-            motor_control(LEFT,   MAX_PWR);
-            delay(200);
-            motor_control(RIGHT,  -0.2 * MAX_PWR);  // para
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(20);
-            motor_control(RIGHT,  MAX_PWR);         // gira direita
-            motor_control(LEFT,  -MAX_PWR);
-            delay(130);
-            motor_control(RIGHT,  -0.2 * MAX_PWR);  // para
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(30);
-            motor_control(RIGHT,  MAX_PWR);         // frente
-            motor_control(LEFT,  MAX_PWR);
-            delay(160);
-            motor_control(RIGHT,  -0.2 * MAX_PWR);  // para
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(30);
-            motor_control(RIGHT,  MAX_PWR);         // gira direita
-            motor_control(LEFT,  -MAX_PWR);
-            delay(180);
-            motor_control(RIGHT,  MAX_PWR);         // frente
-            motor_control(LEFT,  MAX_PWR);
-            delay(100);
-            break;
-        case DRAW:
-            motor_control(RIGHT, MAX_PWR);
-            motor_control(LEFT, -MAX_PWR);
-            delay(140);
-            motor_control(RIGHT, -0.2 * MAX_PWR);
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(20);
-            motor_control(RIGHT, MAX_PWR);
-            motor_control(LEFT,  MAX_PWR);
-            delay(70);
-            break;
-        case RIGHT_FRONT_DRIBBLE:                       //work in progress
-            motor_control(RIGHT,  0.8 * MAX_PWR);
-            motor_control(LEFT,  -0.8 * MAX_PWR);
-            delay(30);
-            motor_control(RIGHT, -0.2 * MAX_PWR);
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(20);
-            motor_control(RIGHT, MAX_PWR);
-            motor_control(LEFT,  MAX_PWR);
-            delay(180);
-            break;
-        case LEFT_FRONT_DRIBBLE:                       //work in progress
-            motor_control(RIGHT, -0.8 * MAX_PWR);
-            motor_control(LEFT,   0.8 * MAX_PWR);
-            delay(30);
-            motor_control(RIGHT, -0.2 * MAX_PWR);
-            motor_control(LEFT,  -0.2 * MAX_PWR);
-            delay(20);
-            motor_control(RIGHT, MAX_PWR);
-            motor_control(LEFT,  MAX_PWR);
-            delay(180);
-            break;
-        default:
-            return;
-            break;
+    if(left_center_sensor > frente_esq && last_left_center_sensor > frente_esq && right_center_sensor > frente_dir && last_right_center_sensor > frente_dir){
+        set_state(ATTACK);
+        set_is_running(false);
     }
-}
-
-void update_robot_state() {
-    if (get_state() == FAILSAFE_HALT) return;
-
-    // uint16_t line_sensor_left = get_line_sensor_reading(LEFT_SENSOR_STATE);
-    // uint16_t line_sensor_right = get_line_sensor_reading(RIGHT_SENSOR_STATE);
-
-    // if(line_sensor_left && line_sensor_right){
-    //     set_state(BACK_LINE_MANEUVER);
-    //     return;
-    // }
-
-
-    // if(analogRead(LEFT_LINE_SENSOR) < 1000){
-    //     set_state(LEFT_LINE_MANEUVER);
-    //     return;
-    // }
-    
-    
-    // if(line_sensor_right){
-    //     set_state(RIGHT_LINE_MANEUVER);
-    //     return;
-    // }
-
-    uint16_t left_sensor = get_sensor_reading(LEFT_SENSOR);
-    uint16_t left_center_sensor = get_sensor_reading(LEFT_CENTER_SENSOR);
-    uint16_t right_center_sensor = get_sensor_reading(RIGHT_CENTER_SENSOR);
-    uint16_t right_sensor = get_sensor_reading(RIGHT_SENSOR);
-
-    // TODO: adicionar lógica dos QRES em cima
-    if (left_center_sensor < 2300 && left_center_sensor > 400 && right_center_sensor < 2300 && right_center_sensor > 400) { // perto e no centro
-        set_state(CENTER_SENSOR_TRIGGERED);
+    else if(left_center_sensor < 10 && right_center_sensor < 50){
+        set_state(PERTINHO);
+        set_is_running(false);
     }
-    else if (left_center_sensor < 2300  && left_center_sensor > 400 && right_center_sensor > 2300) { // robô adv mais p/ esq
-        set_state(LEFT_CENTER_SENSOR_TRIGGERED);
+    else if (left_center_sensor > centro && last_left_center_sensor > centro && right_center_sensor > centro && last_right_center_sensor > centro){
+        set_state(CENTER_FOLLOW);
+        set_is_running(false);
     }
-    else if (right_center_sensor < 2300 && right_center_sensor > 400 && left_center_sensor > 2300) { // robô adv mais p/ dir
-        set_state(RIGHT_CENTER_SENSOR_TRIGGERED);
+    else if(right_center_sensor > centro && last_right_center_sensor > centro){
+        set_state(RIGHT_CENTER_FOLLOW);
+        set_last_seen(RIGHT_SENSOR);
+        set_is_running(false);
     }
-    else if (right_sensor < 2300 && right_sensor > 400){ // robô adv na lateral direita
-        set_state(RIGHT_SENSOR_TRIGGERED);
+    else if(left_center_sensor > centro && last_left_center_sensor > centro){
+        set_state(LEFT_CENTER_FOLLOW);
+        set_last_seen(LEFT_SENSOR);
+        set_is_running(false);
     }
-    else if (left_sensor < 2300 && left_sensor > 400){ // robô adv na lateral esquerda
-        set_state(LEFT_SENSOR_TRIGGERED);
+    else if(right_sensor > lateral_dir && last_right_sensor > lateral_dir){
+        set_state(RIGHT_FOLLOW);
+        set_last_seen(RIGHT_SENSOR);
+        set_is_running(false);
     }
-    else {
+    else if(left_sensor > lateral_esq && last_left_sensor > lateral_esq){
+        set_state(LEFT_FOLLOW);
+        set_last_seen(LEFT_SENSOR);
+        set_is_running(false);
+    }
+    else if(get_is_running()){
+        set_state(INITIAL_ROUTINE);
+    }
+    else{    
         set_state(SEARCH);
     }
+
+    last_left_sensor = left_sensor;
+    last_left_center_sensor = left_center_sensor;
+    last_right_center_sensor = right_center_sensor;
+    last_right_sensor = right_sensor;
 }
 
-void run_state() {
-    switch (current_state) {
-    case CENTER_SENSOR_TRIGGERED:
-        motor_control(LEFT,  MAX_PWR);
-        motor_control(RIGHT, MAX_PWR);
-        Serial.println("attack");
-        break;
-    case LEFT_CENTER_SENSOR_TRIGGERED:
-        motor_control(LEFT,  -0.10 * MAX_PWR);
-        motor_control(RIGHT, 0.45 * MAX_PWR);
-        set_last_seen(LEFT_CENTER_SENSOR);
-        Serial.println("left_center");
-        break;
-    case RIGHT_CENTER_SENSOR_TRIGGERED:
-        motor_control(LEFT,   0.45 * MAX_PWR);
-        motor_control(RIGHT, -0.10 * MAX_PWR);
-        set_last_seen(RIGHT_CENTER_SENSOR);
-        Serial.println("right_center");
-        break;
-    case LEFT_SENSOR_TRIGGERED:
-        motor_control(LEFT,  -0.10 * MAX_PWR);
-        motor_control(RIGHT, 0.45 * MAX_PWR);
-        set_last_seen(LEFT_SENSOR);
-        Serial.println("left");
-        break;
-    case RIGHT_SENSOR_TRIGGERED:
-        motor_control(LEFT,   0.45 * MAX_PWR);
-        motor_control(RIGHT, -0.10 * MAX_PWR);
-        set_last_seen(RIGHT_SENSOR);
-        Serial.println("right");
-        break;
-    case SEARCH:
-        if(get_last_seen() == LEFT_SENSOR) {
-            motor_control(LEFT,  -0.45 * MAX_PWR);
-            motor_control(RIGHT,  0.45 * MAX_PWR);
-            Serial.println("search esquerda");
-        } else {
-            motor_control(LEFT,   0.45 * MAX_PWR);
-            motor_control(RIGHT, -0.45 * MAX_PWR);
-            Serial.println("search direita");
-        }
-        break;
-    case FAILSAFE_HALT:
-        motor_control(LEFT, 0);
-        motor_control(RIGHT, 0);
-        Serial.println("parar");
-        break;
-    case BACK_LINE_MANEUVER:
-        motor_control(RIGHT, -0.6 * MAX_PWR);
-        motor_control(LEFT,  -0.6 * MAX_PWR);
-        delay(100);
-        motor_control(RIGHT, 0.6 * MAX_PWR);
-        motor_control(LEFT, -0.6 * MAX_PWR);
-        delay(200);
-        motor_control(RIGHT, 0.4 * MAX_PWR);
-        motor_control(LEFT,  0.4 * MAX_PWR);
-        delay(70);
-        break;
-    case RIGHT_LINE_MANEUVER:
-        motor_control(RIGHT, -0.6 * MAX_PWR);
-        motor_control(LEFT,  -0.6 * MAX_PWR);
-        delay(100);
-        motor_control(RIGHT, 0.6 * MAX_PWR);
-        motor_control(LEFT, -0.6 * MAX_PWR);
-        delay(100);
-        motor_control(RIGHT, 0.4 * MAX_PWR);
-        motor_control(LEFT,  0.4 * MAX_PWR);
-        delay(70);
-        break;
-    case LEFT_LINE_MANEUVER:
-        // Serial.println("linha esquerda");
-        motor_control(RIGHT, -MAX_PWR);
-        motor_control(LEFT,  - MAX_PWR);
-        delay(200);
-        motor_control(RIGHT,  0.6 * MAX_PWR);
-        motor_control(LEFT,  -0.6 * MAX_PWR);
-        delay(200);
-        motor_control(RIGHT,  0.5 * MAX_PWR);
-        motor_control(LEFT,   0.5 * MAX_PWR);
-        delay(70);
-        break;
-    default:
-        current_state = SEARCH;
-        break;
+void run_state(){
+    switch(current_state){
+        case INITIAL_ROUTINE:
+            run_initial_routine();
+            break;
+        case SEARCH:
+            if(get_last_seen() == LEFT_SENSOR){
+                motor_control(RIGHT, 60);
+                motor_control(LEFT, -60);
+                Serial.println("Search p esquerda");
+            }
+            else if(get_last_seen() == RIGHT_SENSOR){
+                motor_control(RIGHT, -60);
+                motor_control(LEFT, 60);
+                Serial.println("Search p direita");
+            }
+            break;
+        case ATTACK:
+            motor_control(RIGHT, 255);
+            motor_control(LEFT, 255);
+            Serial.println("Attack");
+            break;
+        case PERTINHO:
+            Serial.println("pertinho");
+            motor_control(RIGHT, 255);
+            motor_control(LEFT, 255);
+            Serial.println("pertinho");
+            break;
+        case CENTER_FOLLOW:
+            motor_control(RIGHT, 170);
+            motor_control(LEFT, 170);
+            Serial.println("Center follow");
+            break;
+        case RIGHT_CENTER_FOLLOW:
+            Serial.println("Right center follow");
+            motor_control(RIGHT, -127);
+            motor_control(LEFT, 200);
+            break;
+        case LEFT_CENTER_FOLLOW:
+            motor_control(LEFT, -127);
+            motor_control(RIGHT, 200);
+            Serial.println("Left center follow");
+            break;
+        case RIGHT_FOLLOW:
+            Serial.println("Right follow");
+            motor_control(RIGHT, -180);
+            motor_control(LEFT, 180);
+            break;
+        case LEFT_FOLLOW:
+            motor_control(LEFT, -180);
+            motor_control(RIGHT, 180);
+            Serial.println("Left follow");
+            break;
+        case FAILSAFE:
+            motor_control(RIGHT, 0);
+            motor_control(LEFT, 0);
+            Serial.println("Failsafe");
+            break;
+        default:
+            current_state = SEARCH;
+            break;
     }
+
 }

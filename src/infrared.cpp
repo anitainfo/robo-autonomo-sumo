@@ -1,70 +1,89 @@
 #include "infrared.hpp"
-#include <IRremote.hpp>
 #include "state.hpp"
-#include "sensors.hpp"
+#include "motors.hpp"
+#include "initial_routine.hpp"
+#include "LED.hpp"
+
+#include <IRremote.hpp>
+#define DECODE_SONY
 
 void infrared_setup() {
-    IrReceiver.begin(IR_SENSOR, false);
-}
-void wait_referee_signal(void) {
-    while (true) {
-        if (IrReceiver.decode()) {
-            switch (IrReceiver.lastDecodedCommand) {
-            case FIGHT_START_BUTTON:
-                return;
-            default:
-                break;
-            }
-            IrReceiver.printIRResultShort(&Serial);
-            IrReceiver.resume();
-        }
-    }
+    IrReceiver.begin(INFRARED_PIN, false);
 }
 
-void define_starting_routine(void) {
+void wait_referee_signal() {
+   while(true) {
+       if(IrReceiver.decode()){
+           switch (IrReceiver.lastDecodedCommand)
+           {
+           case FIGHT_START_BUTTON:
+               return;
+           default:
+               break;
+           }
+           IrReceiver.printIRResultShort(&Serial);
+           IrReceiver.resume();
+       }
+   }
+}
+
+void define_initial_routine() {
+    set_initial_routine(NONE);
     IrReceiver.decode();
-    while (IrReceiver.lastDecodedCommand != OK_BUTTON) {
-        if (IrReceiver.decode()) {
-            switch (IrReceiver.lastDecodedCommand) {// da pra combar right e left start com outros movimentos
-                case RIGHT_START_BUTTON:                // comeca girando pra direita 
-                    // se só esse botão for apertado não haverá movimento inicial, ele vai girar pra direita apenas
-                    set_last_seen(RIGHT_SENSOR);
+    while(IrReceiver.lastDecodedCommand != OK_BUTTON){
+        if(IrReceiver.decode()) {
+            switch (IrReceiver.lastDecodedCommand){
+                // case RADIO_CONTROL_BUTTON:
+                //     set_initial_routine(RADIO_CONTROL);
+                //     break;
+                case SELECT_LEFT_BUTTON:
+                    set_initial_routine(SELECT_LEFT);
                     break;
-                case LEFT_START_BUTTON:                 // comeca girando pra esquerda
-                    // se só esse botão for apertado não haverá movimento inicial, ele vai girar pra esquerda apenas
-                    set_last_seen(LEFT_SENSOR);
-                    break;
-                case DRAW_BUTTON:                       // para o desempate, da 180 graus
-                    set_starting_routine(DRAW);
+                case SELECT_RIGHT_BUTTON:
+                    set_initial_routine(SELECT_RIGHT);
                     break;
                 case CHARGE_BUTTON:
-                    set_starting_routine(CHARGE);      // vai reto
+                    set_initial_routine(CHARGE);
                     break;
-                case CHARGE_LEFT_BUTTON:
-                    set_starting_routine(CHARGE_LEFT); // vai reto e para a esquerda
+                case DRAW_BUTTON:
+                    set_initial_routine(DRAW);
                     break;
-                case CHARGE_RIGHT_BUTTON:
-                    set_starting_routine(CHARGE_RIGHT);// vai reto e para a direita
+                case LEFT_HALFMOON_BUTTON:
+                    set_initial_routine(LEFT_HALFMOON);
                     break;
-                case RIGHT_FRONT_DRIBBLE_BUTTON:
-                    set_starting_routine(RIGHT_FRONT_DRIBBLE);
+                case RIGHT_HALFMOON_BUTTON:
+                    set_initial_routine(RIGHT_HALFMOON);
                     break;
-                case LEFT_FRONT_DRIBBLE_BUTTON:
-                    set_starting_routine(LEFT_FRONT_DRIBBLE);
+                case LEFT_CHARGE_BUTTON:
+                    set_initial_routine(LEFT_CHARGE);
+                    break;
+                case RIGHT_CHARGE_BUTTON:
+                    set_initial_routine(RIGHT_CHARGE);
+                    break;
+                case LEFT_DRIBBLE_BUTTON:
+                    set_initial_routine(LEFT_DRIBBLE);
+                    break;
+                case RIGHT_DRIBBLE_BUTTON:
+                    set_initial_routine(RIGHT_DRIBBLE);
+                    break;
+                default:
+                    set_initial_routine(NONE);
                     break;
             }
             IrReceiver.printIRResultShort(&Serial);
             IrReceiver.resume();
         }
-    }
+   }
+   set_all_leds_colors(YELLOW);
 }
 
-    void check_for_failsafe_signal(void) { //checa o fail safe
-        if (IrReceiver.decode()) {
-            if (IrReceiver.lastDecodedCommand == STOP_BUTTON) {
-                set_state(FAILSAFE_HALT);
-            }
-            IrReceiver.printIRResultShort(&Serial);
-            IrReceiver.resume();
+void check_for_failsafe_signal() {
+    if(IrReceiver.decode()) {
+        if(IrReceiver.lastDecodedCommand == STOP_BUTTON) {
+            set_state(FAILSAFE);
         }
-    }
+        IrReceiver.printIRResultShort(&Serial);
+        IrReceiver.resume();
+       }
+   }
+

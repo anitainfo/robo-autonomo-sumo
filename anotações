@@ -1,0 +1,17 @@
+to do:
+- check motor control OK
+- fix infrared OK+- (problema nos pinos 1 e 41)
+- test presence sensor OK
+- test line sensor (esp le de 0-3.3V )
+- test led OK+- (led da rotina queimou, mas n vamos trocar pq ta mt prox do usb q ta OTIMO INCRIVEL MARAVILHOSO)
+
+to try:
+- initial routine with battery
+- way to identify banner
+    - presence sensor on the sides
+- calibrate and optimize initial routines
+- think of other initial routines
+- bluetooth control
+- app
+
+- NAO PASSAR 90% RAM

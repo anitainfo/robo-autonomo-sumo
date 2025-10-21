@@ -1,27 +1,26 @@
 #include "line_sensor.hpp"
-#include "Kuroneko.hpp"
 
-line_sensors sensors;
+static ReadingLineSensor sensors;
 
-void setup_line_sensors(){
-    pinMode(LEFT_LINE_SENSOR, INPUT);              //TROCAR PELOS PINOS DOS IRs
-    pinMode(RIGHT_LINE_SENSOR, INPUT);              //TROCAR PELOS PINOS DOS IRs
+void line_sensors_setup(){
+    pinMode(LEFT_LINE_SENSOR_PIN, INPUT);             
+    pinMode(RIGHT_LINE_SENSOR_PIN, INPUT);              
 }
 
 void read_line_sensors(){
-    if(analogRead(LEFT_LINE_SENSOR) > LINE_VALUE){
-        sensors.left = 1;
-    }else{
-        sensors.left = 0;
-    }
-    if(analogRead(RIGHT_LINE_SENSOR) > LINE_VALUE){
-        sensors.left = 1;
-    }else{
-        sensors.left = 0;
-    }
+    sensors.left = analogRead(LEFT_LINE_SENSOR_PIN);
+    sensors.right = analogRead(RIGHT_LINE_SENSOR_PIN);
+    // Serial.begin(9600);
+    // Serial.print(sensors.left); 
+    // Serial.print("\t"); 
+    // Serial.println(sensors.right); 
 }
 
-uint8_t get_line_sensor_reading(Side_line_sensor side){
-    if(side == LEFT_SENSOR_STATE) return sensors.left;
-    else return sensors.right;
+uint8_t get_line_sensor_reading(Side_line_sensor_t side){
+    if(side == LEFT_LINE_SENSOR){
+        return sensors.left;
+    }
+    else if(side == RIGHT_LINE_SENSOR){
+        return sensors.right;
+    }
 }

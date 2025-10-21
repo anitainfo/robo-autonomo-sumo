@@ -1,45 +1,23 @@
 #pragma once
+#include <Arduino.h>
 
-#include "Kuroneko.hpp"
-
-typedef enum {
+typedef enum{
     SEARCH,
-    LEFT_LINE_MANEUVER,
-    RIGHT_LINE_MANEUVER,
-    BACK_LINE_MANEUVER,
-    LEFT_SENSOR_TRIGGERED,
-    LEFT_CENTER_SENSOR_TRIGGERED,
-    CENTER_SENSOR_TRIGGERED,
-    RIGHT_CENTER_SENSOR_TRIGGERED,
-    RIGHT_SENSOR_TRIGGERED,
-    FAILSAFE_HALT
-} KuronekoStrategyState;
+    RIGHT_CENTER_FOLLOW,
+    LEFT_CENTER_FOLLOW, 
+    CENTER_FOLLOW,
+    LEFT_FOLLOW,
+    RIGHT_FOLLOW,
+    FAILSAFE,
+    ATTACK,
+    BACK_LINE,
+    LEFT_LINE,
+    RIGHT_LINE,
+    PERTINHO,
+    INITIAL_ROUTINE
+}States_t;
 
-typedef enum {
-    AWAITING_INPUT = 0,
-    CHARGE_RIGHT,
-    CHARGE_LEFT,
-    CHARGE,
-    DRAW,
-    RIGHT_FRONT_DRIBBLE,
-    LEFT_FRONT_DRIBBLE,
-    NONE,
-} KuronekoStartingMove;
-
-KuronekoStartingMove get_starting_routine();
-
-void set_starting_routine(KuronekoStartingMove move);
-
-void set_bandeira_open(bool open);
-
-void set_bandeira_side(bool side);
-
-void run_starting_routine();
-
-void set_state(KuronekoStrategyState new_state);
-
-KuronekoStrategyState get_state();
-
-void update_robot_state();
-
+States_t save_state();
+void set_state(States_t new_state);
+void decide_state();
 void run_state();

@@ -1,31 +1,29 @@
-#include "Kuroneko.hpp"
-#include "infrared.hpp"
 #include "motors.hpp"
+#include "infrared.hpp"
+#include "presence_sensor.hpp"
 #include "state.hpp"
-#include "sensors.hpp"
 #include "line_sensor.hpp"
+#include "initial_routine.hpp"
+#include "LED.hpp"
 
-void setup() {
-    Serial.begin(115200);
-    Serial.println("oi\n");
-    pinMode(LED_BUILTIN, OUTPUT);
-    // setup_line_sensors();
-    analogWriteFrequency(50000);
-    // print_introduction();
-    infrared_setup();
-    motor_setup();
-    sensors_setup();
-    define_starting_routine();
-    wait_referee_signal();
-    run_starting_routine();
+void setup () {
+   Serial.begin(9600);
+   led_setup();
+   set_led_color(LED_ROT, WHITE);
+   motor_setup();
+   analogWriteFrequency(50000);
+   presence_sensor_setup();
+   infrared_setup();
+   //line_sensors_setup();
+   define_initial_routine();
+   wait_referee_signal();
 }
 
 void loop() {
-    read_sensors();
-    print_sensors();
-    delay(100);
-    check_for_failsafe_signal();
-    // read_line_sensors();
-    update_robot_state();
-    run_state();
+   set_all_leds_colors(GREEN);
+   check_for_failsafe_signal();
+   update_presence_sensor();  
+   //print_sensors();
+   decide_state(); 
+   run_state();
 }
