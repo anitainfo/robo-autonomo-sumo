@@ -47,7 +47,21 @@ A lógica embarcada permite que o robô **identifique o oponente, evite sair da 
 
 ## 🚀 Como Executar
 
-1. Clone este repositório:
+O projeto pode ser compilado e carregado em microcontroladores **ESP32** ou **Arduino UNO/Nano**, conforme o hardware disponível.  
+As instruções abaixo detalham os dois métodos de execução:
+
+---
+
+### 🧰 Opção 1 — Usando PlatformIO (recomendado)
+
+1. **Instale o PlatformIO**  
+   - Via [VS Code](https://platformio.org/install/ide?install=vscode) (extensão PlatformIO IDE)
+   - Ou via terminal:  
+     ```bash
+     pip install platformio
+     ```
+
+2. **Clone este repositório:**
    ```bash
    git clone https://github.com/anitainfo/robo-autonomo-sumo.git
    cd robo-autonomo-sumo
